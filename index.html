@@ -5,6 +5,7 @@
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
 
+        /* NEW BUTTON STYLE */
         #linkButton {
             position: fixed;
             bottom: 30px;
@@ -19,7 +20,6 @@
             cursor: pointer;
             border-radius: 10px;
             z-index: 10;
-            display: none;
         }
 
         #linkButton:hover {
@@ -31,15 +31,13 @@
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- BUTTON TEXT CHANGED -->
-<button id="linkButton">MOBILE VERSION</button>
+<!-- NEW BUTTON -->
+<button id="linkButton">OPEN LINK</button>
 
 <script>
-const MY_URL = "https://mrtopgaming1981.github.io/block-game-by-Jeff/mobile%20block%20game.html"; // change this
+const MY_URL = "https://example.com"; // 👈 change this to your URL
 
-const linkButton = document.getElementById("linkButton");
-
-linkButton.onclick = () => {
+document.getElementById("linkButton").onclick = () => {
     window.location.href = MY_URL;
 };
 
@@ -161,7 +159,10 @@ function wallAttack() {
 
 function reflectAttack() {
     reflectMode = true;
-    setTimeout(() => reflectMode = false, 1500);
+
+    setTimeout(() => {
+        reflectMode = false;
+    }, 1500);
 }
 
 let orbitAngle = 0;
@@ -218,18 +219,72 @@ function update() {
 
     updateBoss();
 
+    if (Math.random() < RANDOM_PROJECTILE_CHANCE) {
+        randomProjectile();
+    }
+
+    for (let b of playerBullets) {
+        b.x += b.dx * b.speed;
+        b.y += b.dy * b.speed;
+
+        if (hit(b, boss)) {
+            if (!reflectMode) {
+                boss.hp -= b.damage;
+            }
+
+            if (reflectMode) {
+                let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+
+                bossProjectiles.push({
+                    x: boss.x + boss.size / 2,
+                    y: boss.y + boss.size / 2,
+                    size: b.size,
+                    speed: PROJECTILE_SPEED,
+                    dx: Math.cos(angle),
+                    dy: Math.sin(angle)
+                });
+            }
+
+            b.x = -9999;
+        }
+    }
+
+    for (let p of bossProjectiles) {
+        p.x += p.dx * p.speed;
+        p.y += p.dy * p.speed;
+
+        if (hit(p, player) && !invincible) {
+            health--;
+            invincible = true;
+            invincibleTimer = 45;
+        }
+    }
+
+    if (invincible) {
+        invincibleTimer--;
+        if (invincibleTimer <= 0) invincible = false;
+    }
+
     attackTimer--;
 
-    if (attackTimer === warningTime) currentAttack = "warning";
+    if (attackTimer === warningTime) {
+        currentAttack = "warning";
+    }
 
     if (attackTimer <= 0) {
+
         if (nextAttack === "wall") {
+            currentAttack = "wall";
             wallAttack();
             nextAttack = "reflect";
-        } else if (nextAttack === "reflect") {
+        }
+        else if (nextAttack === "reflect") {
+            currentAttack = "reflect";
             reflectAttack();
             nextAttack = "orbit";
-        } else {
+        }
+        else {
+            currentAttack = "orbit";
             orbitAttack();
             nextAttack = "wall";
         }
@@ -246,8 +301,6 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameStarted) {
-        linkButton.style.display = "block";
-
         ctx.fillStyle = "white";
         ctx.font = "60px Arial";
         ctx.fillText("DODGE SURVIVAL", canvas.width/2 - 220, canvas.height/2 - 80);
@@ -262,13 +315,45 @@ function draw() {
         return;
     }
 
-    linkButton.style.display = "none";
-
     ctx.fillStyle = "white";
     ctx.fillRect(player.x, player.y, player.size, player.size);
 
+    ctx.fillStyle = "blue";
+    for (let b of playerBullets) {
+        ctx.fillRect(b.x, b.y, b.size, b.size);
+    }
+
     ctx.fillStyle = "red";
+    for (let p of bossProjectiles) {
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+
+    let bossColor = "yellow";
+
+    if (currentAttack === "wall") bossColor = "green";
+    else if (currentAttack === "reflect") bossColor = "red";
+    else if (currentAttack === "orbit") bossColor = "orange";
+
+    if (currentAttack === "warning") {
+        if (nextAttack === "wall") bossColor = "green";
+        else if (nextAttack === "reflect") bossColor = "red";
+        else if (nextAttack === "orbit") bossColor = "orange";
+    }
+
+    ctx.fillStyle = bossColor;
     ctx.fillRect(boss.x, boss.y, boss.size, boss.size);
+
+    ctx.fillStyle = "gray";
+    ctx.fillRect(20, 20, 200, 20);
+
+    ctx.fillStyle = "green";
+    ctx.fillRect(20, 20, (health / maxHealth) * 200, 20);
+
+    ctx.fillStyle = "gray";
+    ctx.fillRect(20, 50, 200, 20);
+
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(20, 50, (boss.hp / 4000) * 200, 20);
 
     if (gameOver) {
         ctx.fillStyle = "white";
