@@ -65,7 +65,7 @@ canvas.height = window.innerHeight;
 
 let gameStarted = false;
 
-// ---------------- PLAYER / BOSS ----------------
+// ---------------- PLAYER ----------------
 let player = {
     x: canvas.width/2,
     y: canvas.height/2,
@@ -73,6 +73,7 @@ let player = {
     speed:4
 };
 
+// ---------------- BOSS ----------------
 let boss = {
     x: canvas.width/2,
     y: canvas.height/2,
@@ -87,79 +88,104 @@ let boss = {
 let bossProjectiles = [];
 let playerBullets = [];
 
-// ---------------- MOVEMENT ----------------
+// ---------------- INPUT ----------------
 let moveX = 0, moveY = 0;
-
-// ---------------- AIM + FIRE ----------------
 let aimX = 0, aimY = 0;
 let firing = false;
 
-// 🔥 FIRE RATE FIX
+// 🔥 FIX: separate touch tracking
+let moveTouchId = null;
+let fireTouchId = null;
+
+// 🔥 fire rate control
 let fireCooldown = 0;
-const FIRE_RATE = 200; // ms between shots (adjust like PC feel)
+const FIRE_RATE = 200;
 
 // ---------------- MOVE JOYSTICK ----------------
 const moveBase = document.getElementById("moveBase");
 const moveStick = document.getElementById("moveStick");
 
-moveBase.addEventListener("touchmove", e => {
-    let t = e.touches[0];
-    let r = moveBase.getBoundingClientRect();
-
-    let dx = t.clientX - (r.left + 60);
-    let dy = t.clientY - (r.top + 60);
-
-    let dist = Math.min(40, Math.hypot(dx,dy));
-    let angle = Math.atan2(dy,dx);
-
-    moveX = Math.cos(angle)*(dist/40);
-    moveY = Math.sin(angle)*(dist/40);
-
-    moveStick.style.left = 35 + moveX*40 + "px";
-    moveStick.style.top = 35 + moveY*40 + "px";
+moveBase.addEventListener("touchstart", e => {
+    moveTouchId = e.changedTouches[0].identifier;
 });
 
-moveBase.addEventListener("touchend", () => {
-    moveX = moveY = 0;
-    moveStick.style.left="35px";
-    moveStick.style.top="35px";
+moveBase.addEventListener("touchmove", e => {
+    for (let t of e.touches) {
+        if (t.identifier !== moveTouchId) continue;
+
+        let r = moveBase.getBoundingClientRect();
+
+        let dx = t.clientX - (r.left + 60);
+        let dy = t.clientY - (r.top + 60);
+
+        let dist = Math.min(40, Math.hypot(dx,dy));
+        let angle = Math.atan2(dy,dx);
+
+        moveX = Math.cos(angle)*(dist/40);
+        moveY = Math.sin(angle)*(dist/40);
+
+        moveStick.style.left = 35 + moveX*40 + "px";
+        moveStick.style.top = 35 + moveY*40 + "px";
+    }
+});
+
+moveBase.addEventListener("touchend", e => {
+    for (let t of e.changedTouches) {
+        if (t.identifier !== moveTouchId) continue;
+
+        moveTouchId = null;
+        moveX = 0;
+        moveY = 0;
+
+        moveStick.style.left = "35px";
+        moveStick.style.top = "35px";
+    }
 });
 
 // ---------------- FIRE JOYSTICK ----------------
 const fireBase = document.getElementById("fireBase");
 const fireStick = document.getElementById("fireStick");
 
-fireBase.addEventListener("touchstart", () => {
+fireBase.addEventListener("touchstart", e => {
+    fireTouchId = e.changedTouches[0].identifier;
     firing = true;
 });
 
 fireBase.addEventListener("touchmove", e => {
-    let t = e.touches[0];
-    let r = fireBase.getBoundingClientRect();
+    for (let t of e.touches) {
+        if (t.identifier !== fireTouchId) continue;
 
-    let dx = t.clientX - (r.left + 60);
-    let dy = t.clientY - (r.top + 60);
+        let r = fireBase.getBoundingClientRect();
 
-    let dist = Math.min(40, Math.hypot(dx,dy));
-    let angle = Math.atan2(dy,dx);
+        let dx = t.clientX - (r.left + 60);
+        let dy = t.clientY - (r.top + 60);
 
-    aimX = Math.cos(angle);
-    aimY = Math.sin(angle);
+        let dist = Math.min(40, Math.hypot(dx,dy));
+        let angle = Math.atan2(dy,dx);
 
-    fireStick.style.left = 35 + aimX*40 + "px";
-    fireStick.style.top = 35 + aimY*40 + "px";
+        aimX = Math.cos(angle);
+        aimY = Math.sin(angle);
+
+        fireStick.style.left = 35 + aimX*40 + "px";
+        fireStick.style.top = 35 + aimY*40 + "px";
+    }
 });
 
-fireBase.addEventListener("touchend", () => {
-    firing = false;
-    aimX = 0;
-    aimY = 0;
+fireBase.addEventListener("touchend", e => {
+    for (let t of e.changedTouches) {
+        if (t.identifier !== fireTouchId) continue;
 
-    fireStick.style.left="35px";
-    fireStick.style.top="35px";
+        fireTouchId = null;
+        firing = false;
+        aimX = 0;
+        aimY = 0;
+
+        fireStick.style.left = "35px";
+        fireStick.style.top = "35px";
+    }
 });
 
-// ---------------- SHOOT (FIXED RATE) ----------------
+// ---------------- SHOOT ----------------
 function shoot() {
     if (!firing) return;
 
