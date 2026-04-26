@@ -4,13 +4,43 @@
     <style>
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
+
+        /* NEW BUTTON STYLE */
+        #linkButton {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 18px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            background: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        #linkButton:hover {
+            background: #ddd;
+        }
     </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
+<!-- NEW BUTTON -->
+<button id="linkButton">OPEN LINK</button>
+
 <script>
+const MY_URL = "https://example.com"; // 👈 change this to your URL
+
+document.getElementById("linkButton").onclick = () => {
+    window.location.href = MY_URL;
+};
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -198,7 +228,6 @@ function update() {
         b.y += b.dy * b.speed;
 
         if (hit(b, boss)) {
-
             if (!reflectMode) {
                 boss.hp -= b.damage;
             }
@@ -269,7 +298,6 @@ function update() {
 }
 
 function draw() {
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameStarted) {
