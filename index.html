@@ -4,43 +4,15 @@
     <style>
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
-
-        /* NEW BUTTON */
-        #mobileBtn {
-            position: absolute;
-            top: 60%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px 50px;
-            font-size: 24px;
-            font-weight: bold;
-            background: white;
-            color: black;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            display: none;
-        }
     </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- NEW BUTTON -->
-<button id="mobileBtn">MOBILE VERSION</button>
-
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-/* NEW BUTTON LOGIC */
-const mobileBtn = document.getElementById("mobileBtn");
-const MOBILE_URL = "https://mrtopgaming1981.github.io/block-game-by-Jeff/mobile%20block%20game.html"; // change this
-
-mobileBtn.onclick = () => {
-    window.location.href = MOBILE_URL;
-};
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -301,9 +273,6 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameStarted) {
-
-        mobileBtn.style.display = "block"; // SHOW BUTTON
-
         ctx.fillStyle = "white";
         ctx.font = "60px Arial";
         ctx.fillText("DODGE SURVIVAL", canvas.width/2 - 220, canvas.height/2 - 80);
@@ -315,10 +284,11 @@ function draw() {
         ctx.fillStyle = "gray";
         ctx.fillText("Game in development — features may change", canvas.width/2 - 200, canvas.height/2 + 30);
 
+        // ✅ ONLY ADDITION
+        ctx.fillText("No mobile version yet", canvas.width/2 - 120, canvas.height/2 + 60);
+
         return;
     }
-
-    mobileBtn.style.display = "none"; // HIDE BUTTON DURING GAME
 
     ctx.fillStyle = "white";
     ctx.fillRect(player.x, player.y, player.size, player.size);
