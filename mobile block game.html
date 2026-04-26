@@ -104,7 +104,7 @@ let fireTouch=null;
 let fireCooldown=0;
 const FIRE_RATE=200;
 
-// ---------------- ATTACK SYSTEM (PC EXACT) ----------------
+// ---------------- ATTACK SYSTEM ----------------
 let attackTimer=300;
 let warningTime=80;
 let nextAttack="wall";
@@ -112,17 +112,7 @@ let currentAttack="idle";
 
 let orbitAngle=0;
 
-// ---------------- COLLISION ----------------
-function hit(a,b){
-    return (
-        a.x < b.x + b.size &&
-        a.x + a.size > b.x &&
-        a.y < b.y + b.size &&
-        a.y + a.size > b.y
-    );
-}
-
-// ---------------- JOYSTICK MOVE ----------------
+// ---------------- MOVE JOYSTICK ----------------
 const moveBase=document.getElementById("moveBase");
 const moveStick=document.getElementById("moveStick");
 
@@ -214,7 +204,7 @@ function shoot(){
     });
 }
 
-// ---------------- ATTACKS ----------------
+// ---------------- PC ATTACKS ----------------
 function wallAttack(){
     let dir=Math.random()<0.5?-1:1;
 
@@ -253,13 +243,23 @@ function orbitAttack(){
     orbitAngle+=0.25;
 }
 
-// ---------------- BOSS UPDATE ----------------
+// ---------------- BOSS ----------------
 function updateBoss(){
-    boss.color="yellow"; // ALWAYS BASE COLOR (PC CORRECT)
+    boss.color="yellow"; // PC CORRECT BASE COLOR
 
     boss.angle+=0.02;
     boss.x=boss.centerX+Math.cos(boss.angle)*boss.radius;
     boss.y=boss.centerY+Math.sin(boss.angle)*boss.radius;
+}
+
+// ---------------- COLLISION ----------------
+function hit(a,b){
+    return (
+        a.x < b.x + b.size &&
+        a.x + a.size > b.x &&
+        a.y < b.y + b.size &&
+        a.y + a.size > b.y
+    );
 }
 
 // ---------------- UPDATE ----------------
@@ -298,7 +298,7 @@ function update(){
         attackTimer=300;
     }
 
-    // MOVE PROJECTILES + DAMAGE
+    // MOVE + DAMAGE
     for(let p of bossProjectiles){
         p.x+=p.dx*p.speed;
         p.y+=p.dy*p.speed;
@@ -362,12 +362,19 @@ function draw(){
         ctx.fillRect(b.x,b.y,b.size,b.size);
     }
 
-    // HEALTH BAR
+    // PLAYER HP
     ctx.fillStyle="gray";
     ctx.fillRect(20,20,200,20);
 
     ctx.fillStyle="green";
     ctx.fillRect(20,20,(health/maxHealth)*200,20);
+
+    // BOSS HP BAR (PC STYLE)
+    ctx.fillStyle="gray";
+    ctx.fillRect(canvas.width/2-100,20,200,15);
+
+    ctx.fillStyle="green";
+    ctx.fillRect(canvas.width/2-100,20,(boss.hp/4000)*200,15);
 }
 
 // ---------------- LOOP ----------------
@@ -377,7 +384,11 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
-canvas.addEventListener("touchstart",()=>gameStarted=true);
+// START + RESTART
+canvas.addEventListener("touchstart",()=>{
+    if(!gameStarted) gameStarted=true;
+    if(gameOver) location.reload();
+});
 
 loop();
 </script>
