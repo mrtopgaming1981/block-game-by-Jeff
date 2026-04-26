@@ -5,7 +5,6 @@
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
 
-        /* Button now hidden by default */
         #linkButton {
             position: fixed;
             bottom: 30px;
@@ -20,7 +19,7 @@
             cursor: pointer;
             border-radius: 10px;
             z-index: 10;
-            display: none; /* 👈 important */
+            display: none;
         }
 
         #linkButton:hover {
@@ -32,8 +31,8 @@
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- Button (start screen only) -->
-<button id="linkButton">OPEN LINK</button>
+<!-- BUTTON TEXT CHANGED -->
+<button id="linkButton">MOBILE VERSION</button>
 
 <script>
 const MY_URL = "https://example.com"; // change this
@@ -57,7 +56,6 @@ const RANDOM_PROJECTILE_CHANCE = 0.03;
 
 let gameStarted = false;
 
-/* PLAYER */
 let player = {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -91,7 +89,6 @@ window.addEventListener("mousedown", e => {
     if (e.button === 0 && !gameOver && !victory && gameStarted) shoot();
 });
 
-/* GAME STATE */
 let bossProjectiles = [];
 let playerBullets = [];
 
@@ -122,7 +119,6 @@ let victory = false;
 
 let reflectMode = false;
 
-/* SHOOT */
 function shoot() {
     let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
 
@@ -137,7 +133,6 @@ function shoot() {
     });
 }
 
-/* COLLISION */
 function hit(a, b) {
     return (
         a.x < b.x + b.size &&
@@ -147,7 +142,6 @@ function hit(a, b) {
     );
 }
 
-/* ATTACKS */
 function wallAttack() {
     let dir = Math.random() < 0.5 ? -1 : 1;
 
@@ -202,7 +196,6 @@ function randomProjectile() {
     });
 }
 
-/* UPDATE */
 function updateBoss() {
     if (currentAttack === "warning") return;
 
@@ -224,8 +217,6 @@ function update() {
     player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
 
     updateBoss();
-
-    if (Math.random() < RANDOM_PROJECTILE_CHANCE) randomProjectile();
 
     attackTimer--;
 
@@ -251,13 +242,11 @@ function update() {
     if (health <= 0) gameOver = true;
 }
 
-/* DRAW */
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 🔥 START SCREEN
     if (!gameStarted) {
-        linkButton.style.display = "block"; // show button
+        linkButton.style.display = "block";
 
         ctx.fillStyle = "white";
         ctx.font = "60px Arial";
@@ -273,7 +262,6 @@ function draw() {
         return;
     }
 
-    // 🔥 HIDE BUTTON DURING GAME
     linkButton.style.display = "none";
 
     ctx.fillStyle = "white";
@@ -295,7 +283,6 @@ function draw() {
     }
 }
 
-/* LOOP */
 function loop() {
     update();
     draw();
