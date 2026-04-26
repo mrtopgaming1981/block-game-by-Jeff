@@ -1,256 +1,305 @@
 <html>
 <head>
-    <title>Dodge Survival</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dodge Survival Mobile</title>
 
-    <style>
-        body { margin: 0; overflow: hidden; background: black; }
-        canvas { display: block; }
+<style>
+body { margin:0; overflow:hidden; background:black; touch-action:none; }
+canvas { display:block; }
 
-        #linkButton {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 18px 40px;
-            font-size: 22px;
-            font-weight: bold;
-            background: white;
-            color: black;
-            border: none;
-            cursor: pointer;
-            border-radius: 10px;
-            z-index: 10;
-            display: none;
-        }
+/* MOVE JOYSTICK */
+#moveBase {
+    position:absolute;
+    bottom:60px;
+    left:60px;
+    width:120px;
+    height:120px;
+    background:rgba(255,255,255,0.1);
+    border-radius:50%;
+}
+#moveStick {
+    position:absolute;
+    width:50px;
+    height:50px;
+    background:white;
+    border-radius:50%;
+    top:35px;
+    left:35px;
+}
 
-        /* LEFT JOYSTICK (MOVE) */
-        #moveBase {
-            position:absolute;
-            bottom:60px;
-            left:60px;
-            width:120px;
-            height:120px;
-            background:rgba(255,255,255,0.1);
-            border-radius:50%;
-        }
-        #moveStick {
-            position:absolute;
-            width:50px;
-            height:50px;
-            background:white;
-            border-radius:50%;
-            top:35px;
-            left:35px;
-        }
-
-        /* RIGHT JOYSTICK (FIRE) */
-        #fireBase {
-            position:absolute;
-            bottom:60px;
-            right:60px;
-            width:120px;
-            height:120px;
-            background:rgba(255,0,0,0.1);
-            border-radius:50%;
-        }
-        #fireStick {
-            position:absolute;
-            width:50px;
-            height:50px;
-            background:red;
-            border-radius:50%;
-            top:35px;
-            left:35px;
-        }
-    </style>
+/* FIRE JOYSTICK */
+#fireBase {
+    position:absolute;
+    bottom:60px;
+    right:60px;
+    width:120px;
+    height:120px;
+    background:rgba(255,0,0,0.1);
+    border-radius:50%;
+}
+#fireStick {
+    position:absolute;
+    width:50px;
+    height:50px;
+    background:red;
+    border-radius:50%;
+    top:35px;
+    left:35px;
+}
+</style>
 </head>
 
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
-<button id="linkButton">MOBILE VERSION</button>
-
 <div id="moveBase"><div id="moveStick"></div></div>
 <div id="fireBase"><div id="fireStick"></div></div>
 
 <script>
-const MY_URL = "https://mrtopgaming1981.github.io/block-game-by-Jeff/mobile%20block%20game.html";
-document.getElementById("linkButton").onclick = () => window.location.href = MY_URL;
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const PROJECTILE_SPEED = 5;
-const WALL_COUNT = 10;
-const ORBIT_COUNT = 16;
-const RANDOM_PROJECTILE_CHANCE = 0.03;
-
 let gameStarted = false;
 
+// ---------------- PLAYER ----------------
 let player = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    size: 20,
-    speed: 5
+    x: canvas.width/2,
+    y: canvas.height/2,
+    size:20,
+    speed:4
 };
 
+// ---------------- BOSS ----------------
 let boss = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    size: 80,
-    angle: 0,
-    radius: 150,
-    centerX: canvas.width / 2,
-    centerY: canvas.height / 2,
-    hp: 4000
+    x: canvas.width/2,
+    y: canvas.height/2,
+    size:80,
+    angle:0,
+    radius:150,
+    centerX:canvas.width/2,
+    centerY:canvas.height/2,
+    hp:4000,
+    color:"white"
 };
 
 let bossProjectiles = [];
 let playerBullets = [];
 
 // ---------------- INPUT ----------------
-let moveX = 0, moveY = 0;
-let aimX = 0, aimY = 0;
-let firing = false;
+let moveX=0, moveY=0;
+let aimX=0, aimY=0;
+let firing=false;
 
-// fire rate
-let fireCooldown = 0;
-const FIRE_RATE = 200;
+let moveTouchId=null;
+let fireTouchId=null;
+
+let fireCooldown=0;
+const FIRE_RATE=200;
+
+// ---------------- ATTACK SYSTEM ADDED ----------------
+let attackTimer = 300;
+let warningTime = 80;
+let nextAttack = "wall";
+let currentAttack = "idle";
+
+let orbitAngle = 0;
+let reflectMode = false;
 
 // ---------------- MOVE JOYSTICK ----------------
-let moveTouch = null;
-let fireTouch = null;
-
 const moveBase = document.getElementById("moveBase");
 const moveStick = document.getElementById("moveStick");
 
-moveBase.addEventListener("touchstart", e => {
-    moveTouch = e.changedTouches[0].identifier;
+moveBase.addEventListener("touchstart", e=>{
+    moveTouchId=e.changedTouches[0].identifier;
 });
 
-moveBase.addEventListener("touchmove", e => {
-    for (let t of e.touches) {
-        if (t.identifier !== moveTouch) continue;
+moveBase.addEventListener("touchmove", e=>{
+    for(let t of e.touches){
+        if(t.identifier!==moveTouchId) continue;
 
-        let r = moveBase.getBoundingClientRect();
+        let r=moveBase.getBoundingClientRect();
 
-        let dx = t.clientX - (r.left + 60);
-        let dy = t.clientY - (r.top + 60);
+        let dx=t.clientX-(r.left+60);
+        let dy=t.clientY-(r.top+60);
 
-        let dist = Math.min(40, Math.hypot(dx, dy));
-        let angle = Math.atan2(dy, dx);
+        let dist=Math.min(40,Math.hypot(dx,dy));
+        let angle=Math.atan2(dy,dx);
 
-        moveX = Math.cos(angle) * (dist / 40);
-        moveY = Math.sin(angle) * (dist / 40);
+        moveX=Math.cos(angle)*(dist/40);
+        moveY=Math.sin(angle)*(dist/40);
 
-        moveStick.style.left = 35 + moveX * 40 + "px";
-        moveStick.style.top = 35 + moveY * 40 + "px";
+        moveStick.style.left=35+moveX*40+"px";
+        moveStick.style.top=35+moveY*40+"px";
     }
 });
 
-moveBase.addEventListener("touchend", e => {
-    moveTouch = null;
-    moveX = 0;
-    moveY = 0;
-    moveStick.style.left = "35px";
-    moveStick.style.top = "35px";
+moveBase.addEventListener("touchend", ()=>{
+    moveTouchId=null;
+    moveX=0; moveY=0;
+    moveStick.style.left="35px";
+    moveStick.style.top="35px";
 });
 
 // ---------------- FIRE JOYSTICK ----------------
-const fireBase = document.getElementById("fireBase");
-const fireStick = document.getElementById("fireStick");
+const fireBase=document.getElementById("fireBase");
+const fireStick=document.getElementById("fireStick");
 
-fireBase.addEventListener("touchstart", e => {
-    fireTouch = e.changedTouches[0].identifier;
-    firing = true;
+fireBase.addEventListener("touchstart", e=>{
+    fireTouchId=e.changedTouches[0].identifier;
+    firing=true;
 });
 
-fireBase.addEventListener("touchmove", e => {
-    for (let t of e.touches) {
-        if (t.identifier !== fireTouch) continue;
+fireBase.addEventListener("touchmove", e=>{
+    for(let t of e.touches){
+        if(t.identifier!==fireTouchId) continue;
 
-        let r = fireBase.getBoundingClientRect();
+        let r=fireBase.getBoundingClientRect();
 
-        let dx = t.clientX - (r.left + 60);
-        let dy = t.clientY - (r.top + 60);
+        let dx=t.clientX-(r.left+60);
+        let dy=t.clientY-(r.top+60);
 
-        let dist = Math.min(40, Math.hypot(dx, dy));
-        let angle = Math.atan2(dy, dx);
+        let dist=Math.min(40,Math.hypot(dx,dy));
+        let angle=Math.atan2(dy,dx);
 
-        aimX = Math.cos(angle);
-        aimY = Math.sin(angle);
+        aimX=Math.cos(angle);
+        aimY=Math.sin(angle);
 
-        fireStick.style.left = 35 + aimX * 40 + "px";
-        fireStick.style.top = 35 + aimY * 40 + "px";
+        fireStick.style.left=35+aimX*40+"px";
+        fireStick.style.top=35+aimY*40+"px";
     }
 });
 
-fireBase.addEventListener("touchend", () => {
-    fireTouch = null;
-    firing = false;
-    aimX = 0;
-    aimY = 0;
-
-    fireStick.style.left = "35px";
-    fireStick.style.top = "35px";
+fireBase.addEventListener("touchend", ()=>{
+    fireTouchId=null;
+    firing=false;
+    aimX=0; aimY=0;
+    fireStick.style.left="35px";
+    fireStick.style.top="35px";
 });
 
 // ---------------- SHOOT ----------------
-function shoot() {
-    if (!firing) return;
+function shoot(){
+    if(!firing) return;
 
-    let now = Date.now();
-    if (now < fireCooldown) return;
-    fireCooldown = now + FIRE_RATE;
+    let now=Date.now();
+    if(now<fireCooldown) return;
+    fireCooldown=now+FIRE_RATE;
 
-    if (aimX === 0 && aimY === 0) return;
+    if(aimX===0&&aimY===0) return;
 
     playerBullets.push({
-        x: player.x,
-        y: player.y,
-        size: 6,
-        speed: 8,
-        dx: aimX,
-        dy: aimY,
-        damage: 20
+        x:player.x,
+        y:player.y,
+        size:6,
+        speed:8,
+        dx:aimX,
+        dy:aimY,
+        damage:20
     });
 }
 
-// ---------------- KEEP YOUR ORIGINAL GAME ----------------
-let attackTimer = 300;
-let currentAttack = "idle";
-let nextAttack = "wall";
+// ---------------- PC ATTACKS ----------------
+function wallAttack(){
+    let dir=Math.random()<0.5?-1:1;
 
-let health = 3;
-let gameOver = false;
-let victory = false;
+    for(let i=0;i<10;i++){
+        let y=(canvas.height/10)*i;
 
-function wallAttack(){ for(let i=0;i<WALL_COUNT;i++){} }
-function reflectAttack(){}
-function orbitAttack(){}
+        bossProjectiles.push({
+            x:dir===1?0:canvas.width,
+            y:y,
+            size:12,
+            speed:4,
+            dx:dir,
+            dy:0,
+            color:"orange"
+        });
+    }
+}
 
+function reflectAttack(){
+    reflectMode=true;
+    setTimeout(()=>reflectMode=false,1500);
+}
+
+function orbitAttack(){
+    for(let i=0;i<16;i++){
+        let angle=orbitAngle+(i*(Math.PI*2/16));
+
+        bossProjectiles.push({
+            x:boss.x,
+            y:boss.y,
+            size:10,
+            speed:4,
+            dx:Math.cos(angle),
+            dy:Math.sin(angle),
+            color:"purple"
+        });
+    }
+
+    orbitAngle+=0.25;
+}
+
+// ---------------- BOSS UPDATE + COLORS ----------------
 function updateBoss(){
-    boss.angle += 0.02;
-    boss.x = boss.centerX + Math.cos(boss.angle)*boss.radius;
-    boss.y = boss.centerY + Math.sin(boss.angle)*boss.radius;
+
+    if(currentAttack==="warning"){
+        boss.color="yellow";
+        return;
+    }
+
+    if(currentAttack==="wall") boss.color="red";
+    else if(currentAttack==="reflect") boss.color="cyan";
+    else if(currentAttack==="orbit") boss.color="purple";
+    else boss.color="white";
+
+    boss.angle+=0.02;
+    boss.x=boss.centerX+Math.cos(boss.angle)*boss.radius;
+    boss.y=boss.centerY+Math.sin(boss.angle)*boss.radius;
 }
 
 // ---------------- UPDATE ----------------
 function update(){
     if(!gameStarted) return;
 
-    player.x += moveX * player.speed;
-    player.y += moveY * player.speed;
+    player.x+=moveX*player.speed;
+    player.y+=moveY*player.speed;
 
     updateBoss();
     shoot();
 
-    if(boss.hp <= 0) victory = true;
+    attackTimer--;
+
+    if(attackTimer===warningTime){
+        currentAttack="warning";
+    }
+
+    if(attackTimer<=0){
+
+        if(nextAttack==="wall"){
+            wallAttack();
+            currentAttack="wall";
+            nextAttack="reflect";
+
+        } else if(nextAttack==="reflect"){
+            reflectAttack();
+            currentAttack="reflect";
+            nextAttack="orbit";
+
+        } else {
+            orbitAttack();
+            currentAttack="orbit";
+            nextAttack="wall";
+        }
+
+        attackTimer=300;
+    }
+
+    if(boss.hp<=0) alert("YOU WIN!");
 }
 
 // ---------------- DRAW ----------------
@@ -259,23 +308,29 @@ function draw(){
 
     if(!gameStarted){
         ctx.fillStyle="white";
-        ctx.font="50px Arial";
-        ctx.fillText("Press SPACE / Tap to Start", 200, 200);
-        document.getElementById("linkButton").style.display = "block";
+        ctx.font="40px Arial";
+        ctx.fillText("TAP TO START",canvas.width/2-120,canvas.height/2);
         return;
     }
 
-    document.getElementById("linkButton").style.display = "none";
-
+    // PLAYER
     ctx.fillStyle="white";
-    ctx.fillRect(player.x, player.y, player.size, player.size);
+    ctx.fillRect(player.x,player.y,player.size,player.size);
 
-    ctx.fillStyle="red";
-    ctx.fillRect(boss.x, boss.y, boss.size, boss.size);
+    // BOSS (COLOR CHANGES HERE)
+    ctx.fillStyle=boss.color;
+    ctx.fillRect(boss.x,boss.y,boss.size,boss.size);
 
+    // BULLETS
     ctx.fillStyle="blue";
     for(let b of playerBullets)
-        ctx.fillRect(b.x, b.y, b.size, b.size);
+        ctx.fillRect(b.x,b.y,b.size,b.size);
+
+    // PROJECTILES
+    for(let p of bossProjectiles){
+        ctx.fillStyle=p.color||"red";
+        ctx.fillRect(p.x,p.y,p.size,p.size);
+    }
 }
 
 // ---------------- LOOP ----------------
@@ -284,6 +339,8 @@ function loop(){
     draw();
     requestAnimationFrame(loop);
 }
+
+canvas.addEventListener("touchstart", ()=>gameStarted=true);
 
 loop();
 </script>
