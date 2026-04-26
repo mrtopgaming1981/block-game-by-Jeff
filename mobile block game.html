@@ -7,7 +7,7 @@
 body { margin:0; overflow:hidden; background:black; touch-action:none; }
 canvas { display:block; }
 
-/* MOVE */
+/* MOVE JOYSTICK */
 #moveBase {
     position:absolute;
     bottom:60px;
@@ -27,7 +27,7 @@ canvas { display:block; }
     left:35px;
 }
 
-/* FIRE */
+/* FIRE JOYSTICK */
 #fireBase {
     position:absolute;
     bottom:60px;
@@ -57,30 +57,30 @@ canvas { display:block; }
 <div id="fireBase"><div id="fireStick"></div></div>
 
 <script>
-const canvas=document.getElementById("gameCanvas");
-const ctx=canvas.getContext("2d");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-canvas.width=innerWidth;
-canvas.height=innerHeight;
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-let gameStarted=false;
-let gameOver=false;
+let gameStarted = false;
+let gameOver = false;
 
 // ---------------- PLAYER ----------------
-let player={
-    x:canvas.width/2,
-    y:canvas.height/2,
+let player = {
+    x: canvas.width/2,
+    y: canvas.height/2,
     size:20,
     speed:5
 };
 
-let health=3;
-let maxHealth=3;
+let health = 3;
+let maxHealth = 3;
 
 // ---------------- BOSS ----------------
-let boss={
-    x:canvas.width/2,
-    y:canvas.height/2,
+let boss = {
+    x: canvas.width/2,
+    y: canvas.height/2,
     size:80,
     angle:0,
     radius:150,
@@ -90,12 +90,12 @@ let boss={
     color:"yellow"
 };
 
-let bossProjectiles=[];
-let playerBullets=[];
+let bossProjectiles = [];
+let playerBullets = [];
 
 // ---------------- INPUT ----------------
-let moveX=0,moveY=0;
-let aimX=0,aimY=0;
+let moveX=0, moveY=0;
+let aimX=0, aimY=0;
 let firing=false;
 
 let moveTouch=null;
@@ -114,7 +114,7 @@ let orbitAngle=0;
 
 // ---------------- COLLISION ----------------
 function hit(a,b){
-    return(
+    return (
         a.x < b.x + b.size &&
         a.x + a.size > b.x &&
         a.y < b.y + b.size &&
@@ -207,11 +207,11 @@ function shoot(){
     });
 }
 
-// ---------------- WALL ATTACK (FIXED SPACING) ----------------
+// ---------------- WALL ATTACK (FIXED) ----------------
 function wallAttack(){
     let dir=Math.random()<0.5?-1:1;
 
-    const GAP=120; // 🔥 FIXED: bigger spacing
+    const GAP=45; // ✅ FIXED: balanced spacing
 
     for(let y=0;y<canvas.height;y+=GAP){
         bossProjectiles.push({
@@ -332,17 +332,21 @@ function draw(){
         return;
     }
 
+    // PLAYER
     ctx.fillStyle="white";
     ctx.fillRect(player.x,player.y,player.size,player.size);
 
+    // BOSS
     ctx.fillStyle=boss.color;
     ctx.fillRect(boss.x,boss.y,boss.size,boss.size);
 
+    // PROJECTILES
     ctx.fillStyle="red";
     for(let p of bossProjectiles){
         ctx.fillRect(p.x,p.y,p.size,p.size);
     }
 
+    // BULLETS
     ctx.fillStyle="blue";
     for(let b of playerBullets){
         ctx.fillRect(b.x,b.y,b.size,b.size);
@@ -354,7 +358,7 @@ function draw(){
     ctx.fillStyle="green";
     ctx.fillRect(20,20,(health/maxHealth)*200,20);
 
-    // BOSS HP (RED)
+    // BOSS HP
     ctx.fillStyle="gray";
     ctx.fillRect(canvas.width/2-100,20,200,15);
     ctx.fillStyle="red";
