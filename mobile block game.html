@@ -7,7 +7,7 @@
 body { margin:0; overflow:hidden; background:black; touch-action:none; }
 canvas { display:block; }
 
-/* MOVE JOYSTICK */
+/* MOVE */
 #moveBase {
     position:absolute;
     bottom:60px;
@@ -27,7 +27,7 @@ canvas { display:block; }
     left:35px;
 }
 
-/* FIRE JOYSTICK */
+/* FIRE */
 #fireBase {
     position:absolute;
     bottom:60px;
@@ -57,30 +57,30 @@ canvas { display:block; }
 <div id="fireBase"><div id="fireStick"></div></div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-let gameStarted = false;
-let gameOver = false;
+let gameStarted=false;
+let gameOver=false;
 
 // ---------------- PLAYER ----------------
-let player = {
-    x: canvas.width/2,
-    y: canvas.height/2,
+let player={
+    x:canvas.width/2,
+    y:canvas.height/2,
     size:20,
     speed:5
 };
 
-let health = 3;
-let maxHealth = 3;
+let health=3;
+let maxHealth=3;
 
 // ---------------- BOSS ----------------
-let boss = {
-    x: canvas.width/2,
-    y: canvas.height/2,
+let boss={
+    x:canvas.width/2,
+    y:canvas.height/2,
     size:80,
     angle:0,
     radius:150,
@@ -90,12 +90,12 @@ let boss = {
     color:"yellow"
 };
 
-let bossProjectiles = [];
-let playerBullets = [];
+let bossProjectiles=[];
+let playerBullets=[];
 
 // ---------------- INPUT ----------------
-let moveX=0, moveY=0;
-let aimX=0, aimY=0;
+let moveX=0,moveY=0;
+let aimX=0,aimY=0;
 let firing=false;
 
 let moveTouch=null;
@@ -111,6 +111,16 @@ let nextAttack="wall";
 let currentAttack="idle";
 
 let orbitAngle=0;
+
+// ---------------- COLLISION ----------------
+function hit(a,b){
+    return(
+        a.x < b.x + b.size &&
+        a.x + a.size > b.x &&
+        a.y < b.y + b.size &&
+        a.y + a.size > b.y
+    );
+}
 
 // ---------------- MOVE JOYSTICK ----------------
 const moveBase=document.getElementById("moveBase");
@@ -143,8 +153,6 @@ moveBase.addEventListener("touchmove",e=>{
 moveBase.addEventListener("touchend",()=>{
     moveTouch=null;
     moveX=moveY=0;
-    moveStick.style.left="35px";
-    moveStick.style.top="35px";
 });
 
 // ---------------- FIRE JOYSTICK ----------------
@@ -170,9 +178,6 @@ fireBase.addEventListener("touchmove",e=>{
 
         aimX=Math.cos(ang);
         aimY=Math.sin(ang);
-
-        fireStick.style.left=35+aimX*40+"px";
-        fireStick.style.top=35+aimY*40+"px";
     }
 });
 
@@ -180,8 +185,6 @@ fireBase.addEventListener("touchend",()=>{
     fireTouch=null;
     firing=false;
     aimX=aimY=0;
-    fireStick.style.left="35px";
-    fireStick.style.top="35px";
 });
 
 // ---------------- SHOOT ----------------
@@ -204,13 +207,13 @@ function shoot(){
     });
 }
 
-// ---------------- PC ATTACKS ----------------
+// ---------------- WALL ATTACK (FIXED SPACING) ----------------
 function wallAttack(){
     let dir=Math.random()<0.5?-1:1;
 
-    for(let i=0;i<10;i++){
-        let y=(canvas.height/10)*i;
+    const GAP=120; // 🔥 FIXED: bigger spacing
 
+    for(let y=0;y<canvas.height;y+=GAP){
         bossProjectiles.push({
             x:dir===1?0:canvas.width,
             y:y,
@@ -222,6 +225,7 @@ function wallAttack(){
     }
 }
 
+// ---------------- OTHER ATTACKS ----------------
 function reflectAttack(){
     currentAttack="reflect";
     setTimeout(()=>currentAttack="idle",1500);
@@ -245,21 +249,11 @@ function orbitAttack(){
 
 // ---------------- BOSS ----------------
 function updateBoss(){
-    boss.color="yellow"; // PC CORRECT BASE COLOR
+    boss.color="yellow";
 
     boss.angle+=0.02;
     boss.x=boss.centerX+Math.cos(boss.angle)*boss.radius;
     boss.y=boss.centerY+Math.sin(boss.angle)*boss.radius;
-}
-
-// ---------------- COLLISION ----------------
-function hit(a,b){
-    return (
-        a.x < b.x + b.size &&
-        a.x + a.size > b.x &&
-        a.y < b.y + b.size &&
-        a.y + a.size > b.y
-    );
 }
 
 // ---------------- UPDATE ----------------
@@ -298,7 +292,6 @@ function update(){
         attackTimer=300;
     }
 
-    // MOVE + DAMAGE
     for(let p of bossProjectiles){
         p.x+=p.dx*p.speed;
         p.y+=p.dy*p.speed;
@@ -306,10 +299,7 @@ function update(){
         if(hit(player,p)){
             p.x=-9999;
             health--;
-
-            if(health<=0){
-                gameOver=true;
-            }
+            if(health<=0) gameOver=true;
         }
     }
 
@@ -342,21 +332,17 @@ function draw(){
         return;
     }
 
-    // PLAYER
     ctx.fillStyle="white";
     ctx.fillRect(player.x,player.y,player.size,player.size);
 
-    // BOSS
     ctx.fillStyle=boss.color;
     ctx.fillRect(boss.x,boss.y,boss.size,boss.size);
 
-    // PROJECTILES
     ctx.fillStyle="red";
     for(let p of bossProjectiles){
         ctx.fillRect(p.x,p.y,p.size,p.size);
     }
 
-    // BULLETS
     ctx.fillStyle="blue";
     for(let b of playerBullets){
         ctx.fillRect(b.x,b.y,b.size,b.size);
@@ -365,15 +351,13 @@ function draw(){
     // PLAYER HP
     ctx.fillStyle="gray";
     ctx.fillRect(20,20,200,20);
-
     ctx.fillStyle="green";
     ctx.fillRect(20,20,(health/maxHealth)*200,20);
 
-    // BOSS HP BAR (PC STYLE)
+    // BOSS HP (RED)
     ctx.fillStyle="gray";
     ctx.fillRect(canvas.width/2-100,20,200,15);
-
-    ctx.fillStyle="green";
+    ctx.fillStyle="red";
     ctx.fillRect(canvas.width/2-100,20,(boss.hp/4000)*200,15);
 }
 
@@ -384,7 +368,6 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
-// START + RESTART
 canvas.addEventListener("touchstart",()=>{
     if(!gameStarted) gameStarted=true;
     if(gameOver) location.reload();
