@@ -207,11 +207,11 @@ function shoot(){
     });
 }
 
-// ---------------- WALL ATTACK (FIXED) ----------------
+// ---------------- WALL ATTACK (RESTORED) ----------------
 function wallAttack(){
     let dir=Math.random()<0.5?-1:1;
 
-    const GAP=45; // ✅ FIXED: balanced spacing
+    const GAP=120; // ✅ restored original balanced spacing
 
     for(let y=0;y<canvas.height;y+=GAP){
         bossProjectiles.push({
@@ -247,13 +247,19 @@ function orbitAttack(){
     orbitAngle+=0.25;
 }
 
-// ---------------- BOSS ----------------
+// ---------------- BOSS (FIXED COLOR SYSTEM) ----------------
 function updateBoss(){
-    boss.color="yellow";
 
     boss.angle+=0.02;
     boss.x=boss.centerX+Math.cos(boss.angle)*boss.radius;
     boss.y=boss.centerY+Math.sin(boss.angle)*boss.radius;
+
+    // 🎯 PC ACCURATE ATTACK COLORS
+    if(currentAttack==="warning") boss.color="white";
+    else if(currentAttack==="wall") boss.color="red";
+    else if(currentAttack==="reflect") boss.color="cyan";
+    else if(currentAttack==="orbit") boss.color="purple";
+    else boss.color="yellow";
 }
 
 // ---------------- UPDATE ----------------
@@ -358,7 +364,7 @@ function draw(){
     ctx.fillStyle="green";
     ctx.fillRect(20,20,(health/maxHealth)*200,20);
 
-    // BOSS HP
+    // BOSS HP BAR
     ctx.fillStyle="gray";
     ctx.fillRect(canvas.width/2-100,20,200,15);
     ctx.fillStyle="red";
