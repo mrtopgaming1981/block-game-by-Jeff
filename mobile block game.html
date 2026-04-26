@@ -71,11 +71,9 @@ let moveY = 0;
 let joystick = document.getElementById("joystick");
 let base = document.getElementById("joystickBase");
 
-let dragging = false;
-let startX = 0;
-let startY = 0;
 
-base.addEventListener("touchstart", e => {
+// ---------------- JOYSTICK ----------------
+base.addEventListener("touchstart", () => {
     dragging = true;
 });
 
@@ -103,13 +101,32 @@ base.addEventListener("touchend", () => {
     joystick.style.top = "35px";
 });
 
-canvas.addEventListener("touchstart", () => {
-    if (!gameStarted) gameStarted = true;
-    shoot();
+
+// ---------------- SHOOTING ----------------
+canvas.addEventListener("touchstart", (e) => {
+    if (!gameStarted) {
+        gameStarted = true;
+        return;
+    }
+
+    let touch = e.touches[0];
+
+    // ignore joystick touches
+    let target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && (target.id === "joystick" || target.id === "joystickBase")) {
+        return;
+    }
+
+    shoot(touch);
 });
 
-function shoot() {
-    let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+function shoot(touch) {
+    let rect = canvas.getBoundingClientRect();
+
+    let targetX = touch.clientX - rect.left;
+    let targetY = touch.clientY - rect.top;
+
+    let angle = Math.atan2(targetY - player.y, targetX - player.x);
 
     playerBullets.push({
         x: player.x,
@@ -122,6 +139,8 @@ function shoot() {
     });
 }
 
+
+// ---------------- BOSS ----------------
 function randomProjectile() {
     let angle = Math.random() * Math.PI * 2;
 
@@ -141,6 +160,8 @@ function updateBoss() {
     boss.y = boss.centerY + Math.sin(boss.angle) * boss.radius;
 }
 
+
+// ---------------- GAME LOOP ----------------
 function update() {
     if (!gameStarted) return;
 
