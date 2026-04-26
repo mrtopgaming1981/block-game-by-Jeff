@@ -5,7 +5,7 @@
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
 
-        /* NEW BUTTON STYLE */
+        /* Button now hidden by default */
         #linkButton {
             position: fixed;
             bottom: 30px;
@@ -20,6 +20,7 @@
             cursor: pointer;
             border-radius: 10px;
             z-index: 10;
+            display: none; /* 👈 important */
         }
 
         #linkButton:hover {
@@ -31,13 +32,15 @@
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- NEW BUTTON -->
+<!-- Button (start screen only) -->
 <button id="linkButton">OPEN LINK</button>
 
 <script>
-const MY_URL = "https://example.com"; // 👈 change this to your URL
+const MY_URL = "https://example.com"; // change this
 
-document.getElementById("linkButton").onclick = () => {
+const linkButton = document.getElementById("linkButton");
+
+linkButton.onclick = () => {
     window.location.href = MY_URL;
 };
 
@@ -54,6 +57,7 @@ const RANDOM_PROJECTILE_CHANCE = 0.03;
 
 let gameStarted = false;
 
+/* PLAYER */
 let player = {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -87,6 +91,7 @@ window.addEventListener("mousedown", e => {
     if (e.button === 0 && !gameOver && !victory && gameStarted) shoot();
 });
 
+/* GAME STATE */
 let bossProjectiles = [];
 let playerBullets = [];
 
@@ -117,6 +122,7 @@ let victory = false;
 
 let reflectMode = false;
 
+/* SHOOT */
 function shoot() {
     let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
 
@@ -131,6 +137,7 @@ function shoot() {
     });
 }
 
+/* COLLISION */
 function hit(a, b) {
     return (
         a.x < b.x + b.size &&
@@ -140,6 +147,7 @@ function hit(a, b) {
     );
 }
 
+/* ATTACKS */
 function wallAttack() {
     let dir = Math.random() < 0.5 ? -1 : 1;
 
@@ -159,10 +167,7 @@ function wallAttack() {
 
 function reflectAttack() {
     reflectMode = true;
-
-    setTimeout(() => {
-        reflectMode = false;
-    }, 1500);
+    setTimeout(() => reflectMode = false, 1500);
 }
 
 let orbitAngle = 0;
@@ -197,6 +202,7 @@ function randomProjectile() {
     });
 }
 
+/* UPDATE */
 function updateBoss() {
     if (currentAttack === "warning") return;
 
@@ -219,72 +225,20 @@ function update() {
 
     updateBoss();
 
-    if (Math.random() < RANDOM_PROJECTILE_CHANCE) {
-        randomProjectile();
-    }
-
-    for (let b of playerBullets) {
-        b.x += b.dx * b.speed;
-        b.y += b.dy * b.speed;
-
-        if (hit(b, boss)) {
-            if (!reflectMode) {
-                boss.hp -= b.damage;
-            }
-
-            if (reflectMode) {
-                let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
-
-                bossProjectiles.push({
-                    x: boss.x + boss.size / 2,
-                    y: boss.y + boss.size / 2,
-                    size: b.size,
-                    speed: PROJECTILE_SPEED,
-                    dx: Math.cos(angle),
-                    dy: Math.sin(angle)
-                });
-            }
-
-            b.x = -9999;
-        }
-    }
-
-    for (let p of bossProjectiles) {
-        p.x += p.dx * p.speed;
-        p.y += p.dy * p.speed;
-
-        if (hit(p, player) && !invincible) {
-            health--;
-            invincible = true;
-            invincibleTimer = 45;
-        }
-    }
-
-    if (invincible) {
-        invincibleTimer--;
-        if (invincibleTimer <= 0) invincible = false;
-    }
+    if (Math.random() < RANDOM_PROJECTILE_CHANCE) randomProjectile();
 
     attackTimer--;
 
-    if (attackTimer === warningTime) {
-        currentAttack = "warning";
-    }
+    if (attackTimer === warningTime) currentAttack = "warning";
 
     if (attackTimer <= 0) {
-
         if (nextAttack === "wall") {
-            currentAttack = "wall";
             wallAttack();
             nextAttack = "reflect";
-        }
-        else if (nextAttack === "reflect") {
-            currentAttack = "reflect";
+        } else if (nextAttack === "reflect") {
             reflectAttack();
             nextAttack = "orbit";
-        }
-        else {
-            currentAttack = "orbit";
+        } else {
             orbitAttack();
             nextAttack = "wall";
         }
@@ -297,10 +251,14 @@ function update() {
     if (health <= 0) gameOver = true;
 }
 
+/* DRAW */
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 🔥 START SCREEN
     if (!gameStarted) {
+        linkButton.style.display = "block"; // show button
+
         ctx.fillStyle = "white";
         ctx.font = "60px Arial";
         ctx.fillText("DODGE SURVIVAL", canvas.width/2 - 220, canvas.height/2 - 80);
@@ -315,45 +273,14 @@ function draw() {
         return;
     }
 
+    // 🔥 HIDE BUTTON DURING GAME
+    linkButton.style.display = "none";
+
     ctx.fillStyle = "white";
     ctx.fillRect(player.x, player.y, player.size, player.size);
 
-    ctx.fillStyle = "blue";
-    for (let b of playerBullets) {
-        ctx.fillRect(b.x, b.y, b.size, b.size);
-    }
-
     ctx.fillStyle = "red";
-    for (let p of bossProjectiles) {
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-    }
-
-    let bossColor = "yellow";
-
-    if (currentAttack === "wall") bossColor = "green";
-    else if (currentAttack === "reflect") bossColor = "red";
-    else if (currentAttack === "orbit") bossColor = "orange";
-
-    if (currentAttack === "warning") {
-        if (nextAttack === "wall") bossColor = "green";
-        else if (nextAttack === "reflect") bossColor = "red";
-        else if (nextAttack === "orbit") bossColor = "orange";
-    }
-
-    ctx.fillStyle = bossColor;
     ctx.fillRect(boss.x, boss.y, boss.size, boss.size);
-
-    ctx.fillStyle = "gray";
-    ctx.fillRect(20, 20, 200, 20);
-
-    ctx.fillStyle = "green";
-    ctx.fillRect(20, 20, (health / maxHealth) * 200, 20);
-
-    ctx.fillStyle = "gray";
-    ctx.fillRect(20, 50, 200, 20);
-
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(20, 50, (boss.hp / 4000) * 200, 20);
 
     if (gameOver) {
         ctx.fillStyle = "white";
@@ -368,6 +295,7 @@ function draw() {
     }
 }
 
+/* LOOP */
 function loop() {
     update();
     draw();
