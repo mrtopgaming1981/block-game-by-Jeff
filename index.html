@@ -5,25 +5,21 @@
         body { margin: 0; overflow: hidden; background: black; }
         canvas { display: block; }
 
-        /* NEW BUTTON STYLE */
-        #linkButton {
-            position: fixed;
-            bottom: 30px;
+        /* NEW BUTTON */
+        #mobileBtn {
+            position: absolute;
+            top: 60%;
             left: 50%;
-            transform: translateX(-50%);
-            padding: 18px 40px;
-            font-size: 22px;
+            transform: translate(-50%, -50%);
+            padding: 20px 50px;
+            font-size: 24px;
             font-weight: bold;
             background: white;
             color: black;
             border: none;
-            cursor: pointer;
             border-radius: 10px;
-            z-index: 10;
-        }
-
-        #linkButton:hover {
-            background: #ddd;
+            cursor: pointer;
+            display: none;
         }
     </style>
 </head>
@@ -32,17 +28,19 @@
 <canvas id="gameCanvas"></canvas>
 
 <!-- NEW BUTTON -->
-<button id="linkButton">OPEN LINK</button>
+<button id="mobileBtn">MOBILE VERSION</button>
 
 <script>
-const MY_URL = "https://example.com"; // 👈 change this to your URL
-
-document.getElementById("linkButton").onclick = () => {
-    window.location.href = MY_URL;
-};
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
+/* NEW BUTTON LOGIC */
+const mobileBtn = document.getElementById("mobileBtn");
+const MOBILE_URL = "https://example.com"; // change this
+
+mobileBtn.onclick = () => {
+    window.location.href = MOBILE_URL;
+};
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -228,6 +226,7 @@ function update() {
         b.y += b.dy * b.speed;
 
         if (hit(b, boss)) {
+
             if (!reflectMode) {
                 boss.hp -= b.damage;
             }
@@ -298,9 +297,13 @@ function update() {
 }
 
 function draw() {
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameStarted) {
+
+        mobileBtn.style.display = "block"; // SHOW BUTTON
+
         ctx.fillStyle = "white";
         ctx.font = "60px Arial";
         ctx.fillText("DODGE SURVIVAL", canvas.width/2 - 220, canvas.height/2 - 80);
@@ -314,6 +317,8 @@ function draw() {
 
         return;
     }
+
+    mobileBtn.style.display = "none"; // HIDE BUTTON DURING GAME
 
     ctx.fillStyle = "white";
     ctx.fillRect(player.x, player.y, player.size, player.size);
