@@ -57,30 +57,30 @@ canvas { display:block; }
 <div id="fireBase"><div id="fireStick"></div></div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-let gameStarted = false;
-let gameOver = false;
+let gameStarted=false;
+let gameOver=false;
 
 // ---------------- PLAYER ----------------
-let player = {
-    x: canvas.width/2,
-    y: canvas.height/2,
+let player={
+    x:canvas.width/2,
+    y:canvas.height/2,
     size:20,
     speed:5
 };
 
-let health = 3;
-let maxHealth = 3;
+let health=3;
+let maxHealth=3;
 
 // ---------------- BOSS ----------------
-let boss = {
-    x: canvas.width/2,
-    y: canvas.height/2,
+let boss={
+    x:canvas.width/2,
+    y:canvas.height/2,
     size:80,
     angle:0,
     radius:150,
@@ -90,8 +90,8 @@ let boss = {
     color:"yellow"
 };
 
-let bossProjectiles = [];
-let playerBullets = [];
+let bossProjectiles=[];
+let playerBullets=[];
 
 // ---------------- INPUT ----------------
 let moveX=0, moveY=0;
@@ -152,7 +152,8 @@ moveBase.addEventListener("touchmove",e=>{
 
 moveBase.addEventListener("touchend",()=>{
     moveTouch=null;
-    moveX=moveY=0;
+    moveX=0;
+    moveY=0;
 });
 
 // ---------------- FIRE JOYSTICK ----------------
@@ -207,11 +208,11 @@ function shoot(){
     });
 }
 
-// ---------------- WALL ATTACK (RESTORED) ----------------
+// ---------------- WALL ATTACK ----------------
 function wallAttack(){
     let dir=Math.random()<0.5?-1:1;
 
-    const GAP=120; // ✅ restored original balanced spacing
+    const GAP=120;
 
     for(let y=0;y<canvas.height;y+=GAP){
         bossProjectiles.push({
@@ -247,14 +248,15 @@ function orbitAttack(){
     orbitAngle+=0.25;
 }
 
-// ---------------- BOSS (FIXED COLOR SYSTEM) ----------------
+// ---------------- BOSS MOVEMENT ----------------
 function updateBoss(){
-
     boss.angle+=0.02;
     boss.x=boss.centerX+Math.cos(boss.angle)*boss.radius;
     boss.y=boss.centerY+Math.sin(boss.angle)*boss.radius;
+}
 
-    // 🎯 PC ACCURATE ATTACK COLORS
+// ---------------- 🎯 ATTACK → COLOR SYSTEM ----------------
+function setBossColor(){
     if(currentAttack==="warning") boss.color="white";
     else if(currentAttack==="wall") boss.color="red";
     else if(currentAttack==="reflect") boss.color="cyan";
@@ -297,6 +299,8 @@ function update(){
 
         attackTimer=300;
     }
+
+    setBossColor(); // 🔥 IMPORTANT FIX
 
     for(let p of bossProjectiles){
         p.x+=p.dx*p.speed;
@@ -364,7 +368,7 @@ function draw(){
     ctx.fillStyle="green";
     ctx.fillRect(20,20,(health/maxHealth)*200,20);
 
-    // BOSS HP BAR
+    // BOSS HP
     ctx.fillStyle="gray";
     ctx.fillRect(canvas.width/2-100,20,200,15);
     ctx.fillStyle="red";
